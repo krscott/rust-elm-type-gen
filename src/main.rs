@@ -1,7 +1,9 @@
+mod cli_file_io;
+
+use cli_file_io::{FileOrStdin, FileOrStdout};
 use std::{
     error::Error,
-    fs::File,
-    io::{self, BufRead, BufReader, BufWriter, Write},
+    io::{BufRead, Write},
     path::PathBuf,
     process::exit,
 };
@@ -29,14 +31,17 @@ struct Opt {
 }
 
 fn app(opt: Opt) -> Result<(), Box<dyn Error>> {
-    let reader = file_or_stdin_reader(&opt.input)?;
-    let mut writer = file_or_stdout_writer(&opt.output)?;
+    let mut input_file = FileOrStdin::from_path(&opt.input)?;
+    let mut output_file = FileOrStdout::from_path(&opt.output)?;
 
     log::info!(
         "Reading '{}', writing '{}'",
         opt.input.to_string_lossy(),
         opt.output.to_string_lossy()
     );
+
+    let reader = input_file.lock();
+    let mut writer = output_file.lock();
 
     for line in reader.lines() {
         writer.write_all(line?.as_bytes())?;
@@ -63,24 +68,4 @@ fn main() {
             exit(1);
         }
     }
-}
-
-fn file_or_stdin_reader(path: &PathBuf) -> io::Result<Box<dyn BufRead>> {
-    let reader = if path.to_string_lossy() == "-" {
-        Box::new(BufReader::new(io::stdin())) as Box<dyn BufRead>
-    } else {
-        Box::new(BufReader::new(File::open(path)?)) as Box<dyn BufRead>
-    };
-
-    Ok(reader)
-}
-
-fn file_or_stdout_writer(path: &PathBuf) -> io::Result<BufWriter<Box<dyn Write>>> {
-    let writer = if path.to_string_lossy() == "-" {
-        Box::new(io::stdout()) as Box<dyn Write>
-    } else {
-        Box::new(File::create(path)?) as Box<dyn Write>
-    };
-
-    Ok(BufWriter::new(writer))
 }
