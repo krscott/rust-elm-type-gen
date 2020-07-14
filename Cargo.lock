@@ -126,6 +126,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8f8bdf33df195859076e54ab11ee78a1b208382d3a26ec40d142ffc1ecc49ef"
 
 [[package]]
+name = "polymorphio"
+version = "0.1.0"
+source = "git+https://github.com/krscott/polymorphio.git?tag=v0.1.0#375210ac3329e1cc35bcf0cdb228e8df9e41e2b9"
+
+[[package]]
 name = "proc-macro-error"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -189,6 +194,7 @@ name = "rust-cli-boilerplate"
 version = "0.1.0"
 dependencies = [
  "log",
+ "polymorphio",
  "stderrlog",
  "structopt",
 ]

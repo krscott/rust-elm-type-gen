@@ -1,6 +1,4 @@
-mod cli_file_io;
-
-use cli_file_io::{FileOrStdin, FileOrStdout};
+use polymorphio::{FileOrStdin, FileOrStdout};
 use std::{
     error::Error,
     io::{BufRead, Write},
