@@ -35,7 +35,7 @@ mod tests {
         compare_strings("", spec.to_elm());
     }
 
-    fn create_spec_empty() -> ApiSpec {
+    fn create_struct_empty() -> ApiSpec {
         ApiSpec {
             module: "".into(),
             types: vec![TypeSpec::Struct {
@@ -46,25 +46,25 @@ mod tests {
     }
 
     #[test]
-    fn rust_empty_struct() {
+    fn rust_struct_empty() {
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct TestStruct {
 }";
 
-        compare_strings(expected, create_spec_empty().to_rust());
+        compare_strings(expected, create_struct_empty().to_rust());
     }
 
     #[test]
-    fn elm_empty_struct() {
+    fn elm_struct_empty() {
         let expected = "\
 type alias TestStruct =
     {}";
 
-        compare_strings(expected, create_spec_empty().to_elm());
+        compare_strings(expected, create_struct_empty().to_elm());
     }
 
-    fn create_spec_simple_struct() -> ApiSpec {
+    fn create_spec_struct_simple() -> ApiSpec {
         ApiSpec {
             module: "".into(),
             types: vec![TypeSpec::Struct {
@@ -84,7 +84,7 @@ type alias TestStruct =
     }
 
     #[test]
-    fn rust_simple_struct() {
+    fn rust_struct_simple() {
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct TestStruct {
@@ -92,21 +92,55 @@ pub struct TestStruct {
     bar: String,
 }";
 
-        compare_strings(expected, create_spec_simple_struct().to_rust());
+        compare_strings(expected, create_spec_struct_simple().to_rust());
     }
 
     #[test]
-    fn elm_simple_struct() {
+    fn elm_struct_simple() {
         let expected = "\
 type alias TestStruct =
     { foo: Int
     , bar: String
     }";
 
-        compare_strings(expected, create_spec_simple_struct().to_elm());
+        compare_strings(expected, create_spec_struct_simple().to_elm());
     }
 
-    fn create_spec_empty_enum() -> ApiSpec {
+    fn create_spec_struct_with_vec() -> ApiSpec {
+        ApiSpec {
+            module: "".into(),
+            types: vec![TypeSpec::Struct {
+                name: "TestStruct".into(),
+                fields: vec![StructField {
+                    name: "foo".into(),
+                    data: ("Vec<u32>".into(), "List Int".into()),
+                }],
+            }],
+        }
+    }
+
+    #[test]
+    fn rust_struct_with_vec() {
+        let expected = "\
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct TestStruct {
+    foo: Vec<u32>,
+}";
+
+        compare_strings(expected, create_spec_struct_with_vec().to_rust());
+    }
+
+    #[test]
+    fn elm_struct_with_vec() {
+        let expected = "\
+type alias TestStruct =
+    { foo: (List Int)
+    }";
+
+        compare_strings(expected, create_spec_struct_with_vec().to_elm());
+    }
+
+    fn create_spec_enum_empty() -> ApiSpec {
         ApiSpec {
             module: "".into(),
             types: vec![TypeSpec::Enum {
@@ -117,26 +151,26 @@ type alias TestStruct =
     }
 
     #[test]
-    fn rust_empty_enum() {
+    fn rust_enum_empty() {
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum TestEnum {
 }";
 
-        compare_strings(expected, create_spec_empty_enum().to_rust());
+        compare_strings(expected, create_spec_enum_empty().to_rust());
     }
 
     #[test]
-    fn elm_empty_enum() {
+    fn elm_enum_empty() {
         // TODO: error on empty enum?
         let expected = "\
 type TestEnum
     = ";
 
-        compare_strings(expected, create_spec_empty_enum().to_elm());
+        compare_strings(expected, create_spec_enum_empty().to_elm());
     }
 
-    fn create_spec_simple_enum() -> ApiSpec {
+    fn create_spec_enum_simple() -> ApiSpec {
         ApiSpec {
             module: "".into(),
             types: vec![TypeSpec::Enum {
@@ -160,7 +194,7 @@ type TestEnum
     }
 
     #[test]
-    fn rust_simple_enum() {
+    fn rust_enum_simple() {
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum TestEnum {
@@ -169,21 +203,21 @@ pub enum TestEnum {
     Qux,
 }";
 
-        compare_strings(expected, create_spec_simple_enum().to_rust());
+        compare_strings(expected, create_spec_enum_simple().to_rust());
     }
 
     #[test]
-    fn elm_simple_enum() {
+    fn elm_enum_simple() {
         let expected = "\
 type TestEnum
     = Foo
     | Bar
     | Qux";
 
-        compare_strings(expected, create_spec_simple_enum().to_elm());
+        compare_strings(expected, create_spec_enum_simple().to_elm());
     }
 
-    fn create_spec_complex_enum() -> ApiSpec {
+    fn create_spec_enum_complex() -> ApiSpec {
         ApiSpec {
             module: "".into(),
             types: vec![TypeSpec::Enum {
@@ -216,7 +250,7 @@ type TestEnum
     }
 
     #[test]
-    fn rust_complex_enum() {
+    fn rust_enum_complex() {
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum TestEnum {
@@ -228,17 +262,63 @@ pub enum TestEnum {
     },
 }";
 
-        compare_strings(expected, create_spec_complex_enum().to_rust());
+        compare_strings(expected, create_spec_enum_complex().to_rust());
     }
 
     #[test]
-    fn elm_complex_enum() {
+    fn elm_enum_complex() {
         let expected = "\
 type TestEnum
     = Foo
     | Bar Bool
     | Qux { sub1: Int, sub2: String }";
 
-        compare_strings(expected, create_spec_complex_enum().to_elm());
+        compare_strings(expected, create_spec_enum_complex().to_elm());
+    }
+
+    fn create_spec_enum_with_vec() -> ApiSpec {
+        ApiSpec {
+            module: "".into(),
+            types: vec![TypeSpec::Enum {
+                name: "TestEnum".into(),
+                variants: vec![
+                    EnumVariant {
+                        name: "Bar".into(),
+                        data: EnumVariantData::Single(("Vec<u32>".into(), "List Int".into())),
+                    },
+                    EnumVariant {
+                        name: "Qux".into(),
+                        data: EnumVariantData::Struct(vec![StructField {
+                            name: "sub1".into(),
+                            data: ("Vec<bool>".into(), "List Bool".into()),
+                        }]),
+                    },
+                ],
+            }],
+        }
+    }
+
+    #[test]
+    fn rust_enum_with_vec() {
+        let expected = "\
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub enum TestEnum {
+    Bar(Vec<u32>),
+    Qux {
+        sub1: Vec<bool>,
+    },
+}";
+
+        compare_strings(expected, create_spec_enum_with_vec().to_rust());
+    }
+
+    #[test]
+    fn elm_enum_with_vec() {
+        let expected = "\
+type TestEnum
+    = Bar (List Int)
+    | Qux { sub1: (List Bool) }";
+
+        compare_strings(expected, create_spec_enum_with_vec().to_elm());
     }
 }

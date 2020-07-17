@@ -158,7 +158,13 @@ impl StructField {
     }
 
     pub fn to_elm(&self, _indent: usize) -> String {
-        format!("{}: {}", self.name, self.data.1)
+        let elm_type = &self.data.1;
+
+        if elm_type.contains(' ') {
+            format!("{}: ({})", self.name, elm_type)
+        } else {
+            format!("{}: {}", self.name, elm_type)
+        }
     }
 }
 
@@ -201,7 +207,13 @@ impl EnumVariantData {
     pub fn to_elm(&self, indent: usize) -> String {
         match self {
             Self::None => "".into(),
-            Self::Single((_, elm_type)) => format!(" {}", elm_type),
+            Self::Single((_, elm_type)) => {
+                if elm_type.contains(' ') {
+                    format!(" ({})", elm_type)
+                } else {
+                    format!(" {}", elm_type)
+                }
+            }
             Self::Struct(fields) => {
                 let fields_fmt = fields
                     .iter()
