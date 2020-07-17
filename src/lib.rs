@@ -32,7 +32,14 @@ mod tests {
             types: vec![],
         };
 
-        compare_strings("", spec.to_elm());
+        compare_strings(
+            "\
+import Json.Decode
+import Json.Encode
+
+",
+            spec.to_elm(),
+        );
     }
 
     fn create_struct_empty() -> ApiSpec {
@@ -58,8 +65,16 @@ pub struct TestStruct {
     #[test]
     fn elm_struct_empty() {
         let expected = "\
+import Json.Decode
+import Json.Encode
+
 type alias TestStruct =
-    {}";
+    { \n    }
+
+encodeTestStruct : TestStruct -> Json.Encode.Value
+encodeTestStruct record =
+    Json.Encode.object
+        [ \n        ]";
 
         compare_strings(expected, create_struct_empty().to_elm());
     }
@@ -98,10 +113,20 @@ pub struct TestStruct {
     #[test]
     fn elm_struct_simple() {
         let expected = "\
+import Json.Decode
+import Json.Encode
+
 type alias TestStruct =
     { foo: Int
     , bar: String
-    }";
+    }
+
+encodeTestStruct : TestStruct -> Json.Encode.Value
+encodeTestStruct record =
+    Json.Encode.object
+        [ (\"foo\", Json.Encode.int <| record.foo)
+        , (\"bar\", Json.Encode.string <| record.bar)
+        ]";
 
         compare_strings(expected, create_spec_struct_simple().to_elm());
     }
@@ -133,9 +158,18 @@ pub struct TestStruct {
     #[test]
     fn elm_struct_with_vec() {
         let expected = "\
+import Json.Decode
+import Json.Encode
+
 type alias TestStruct =
     { foo: (List Int)
-    }";
+    }
+
+encodeTestStruct : TestStruct -> Json.Encode.Value
+encodeTestStruct record =
+    Json.Encode.object
+        [ (\"foo\", Json.Encode.list <| List.map Json.Encode.int <| record.foo)
+        ]";
 
         compare_strings(expected, create_spec_struct_with_vec().to_elm());
     }
@@ -160,15 +194,18 @@ pub enum TestEnum {
         compare_strings(expected, create_spec_enum_empty().to_rust());
     }
 
-    #[test]
-    fn elm_enum_empty() {
-        // TODO: error on empty enum?
-        let expected = "\
-type TestEnum
-    = ";
+    //     #[test]
+    //     fn elm_enum_empty() {
+    //         // TODO: error on empty enum?
+    //         let expected = "\
+    // import Json.Decode
+    // import Json.Encode
 
-        compare_strings(expected, create_spec_enum_empty().to_elm());
-    }
+    // type TestEnum
+    //     = ";
+
+    //         compare_strings(expected, create_spec_enum_empty().to_elm());
+    //     }
 
     fn create_spec_enum_simple() -> ApiSpec {
         ApiSpec {
@@ -209,10 +246,29 @@ pub enum TestEnum {
     #[test]
     fn elm_enum_simple() {
         let expected = "\
+import Json.Decode
+import Json.Encode
+
 type TestEnum
     = Foo
     | Bar
-    | Qux";
+    | Qux
+
+encodeTestEnum : TestEnum -> Json.Encode.Value
+encodeTestEnum var =
+    case var of
+        Foo ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Foo\" )
+                ]
+        Bar ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Bar\" )
+                ]
+        Qux ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Qux\" )
+                ]";
 
         compare_strings(expected, create_spec_enum_simple().to_elm());
     }
@@ -268,10 +324,34 @@ pub enum TestEnum {
     #[test]
     fn elm_enum_complex() {
         let expected = "\
+import Json.Decode
+import Json.Encode
+
 type TestEnum
     = Foo
     | Bar Bool
-    | Qux { sub1: Int, sub2: String }";
+    | Qux { sub1: Int, sub2: String }
+
+encodeTestEnum : TestEnum -> Json.Encode.Value
+encodeTestEnum var =
+    case var of
+        Foo ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Foo\" )
+                ]
+        Bar value ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Bar\" )
+                , ( \"vardata\", Json.Encode.bool <| value )
+                ]
+        Qux record ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Qux\" )
+                , ( \"vardata\", Json.Encode.object
+                    [ ( \"sub1\", Json.Encode.int <| record.sub1 )
+                    , ( \"sub2\", Json.Encode.string <| record.sub2 )
+                    ] )
+                ]";
 
         compare_strings(expected, create_spec_enum_complex().to_elm());
     }
@@ -315,9 +395,28 @@ pub enum TestEnum {
     #[test]
     fn elm_enum_with_vec() {
         let expected = "\
+import Json.Decode
+import Json.Encode
+
 type TestEnum
     = Bar (List Int)
-    | Qux { sub1: (List Bool) }";
+    | Qux { sub1: (List Bool) }
+
+encodeTestEnum : TestEnum -> Json.Encode.Value
+encodeTestEnum var =
+    case var of
+        Bar value ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Bar\" )
+                , ( \"vardata\", Json.Encode.list <| List.map Json.Encode.int <| value )
+                ]
+        Qux record ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Qux\" )
+                , ( \"vardata\", Json.Encode.object
+                    [ ( \"sub1\", Json.Encode.list <| List.map Json.Encode.bool <| record.sub1 )
+                    ] )
+                ]";
 
         compare_strings(expected, create_spec_enum_with_vec().to_elm());
     }

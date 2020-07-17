@@ -51,11 +51,21 @@ impl ApiSpec {
     }
 
     pub fn to_elm(&self) -> String {
-        self.types
+        let types_str = self
+            .types
             .iter()
-            .map(|t| t.to_elm())
+            .flat_map(|t| vec![t.to_elm(), t.to_elm_encoder()])
             .collect::<Vec<_>>()
-            .join("\n\n")
+            .join("\n\n");
+
+        format!(
+            "\
+import Json.Decode
+import Json.Encode
+
+{types}",
+            types = types_str
+        )
     }
 }
 
@@ -102,16 +112,6 @@ pub enum {name} {{
     pub fn to_elm(&self) -> String {
         match self {
             Self::Struct { name, fields } => {
-                if fields.len() == 0 {
-                    return format!(
-                        "\
-type alias {name} =
-{indent}{{}}",
-                        name = name,
-                        indent = INDENT,
-                    );
-                }
-
                 let sep = format!("\n{}, ", INDENT);
 
                 let fields_fmt = fields
@@ -150,6 +150,63 @@ type {name}
             }
         }
     }
+
+    pub fn to_elm_encoder(&self) -> String {
+        match self {
+            Self::Struct { name, fields } => {
+                let sep = format!("\n{}, ", INDENT.repeat(2));
+
+                let field_encoders = fields
+                    .iter()
+                    .map(|field| field.to_elm_encoder())
+                    .collect::<Vec<_>>()
+                    .join(&sep);
+
+                format!(
+                    "\
+encode{name} : {name} -> Json.Encode.Value
+encode{name} record =
+    Json.Encode.object
+        [ {fields}
+        ]",
+                    name = name,
+                    fields = field_encoders
+                )
+            }
+            Self::Enum { name, variants } => {
+                let variant_cases = variants
+                    .iter()
+                    .map(|var| var.to_elm_encoder())
+                    .collect::<Vec<_>>()
+                    .join("");
+
+                format!(
+                    "\
+encode{name} : {name} -> Json.Encode.Value
+encode{name} var =
+    case var of{variants}",
+                    name = name,
+                    variants = variant_cases
+                )
+            }
+        }
+    }
+}
+
+fn elm_json_encoder(elm_type: &str) -> String {
+    let supported_types = ["String", "Int", "Float", "Bool", "List"];
+
+    elm_type
+        .split(' ')
+        .map(|t| {
+            if supported_types.contains(&t) {
+                format!("Json.Encode.{}", t.to_lowercase())
+            } else {
+                format!("encode{}", t)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" <| List.map ")
 }
 
 impl StructField {
@@ -166,6 +223,16 @@ impl StructField {
             format!("{}: {}", self.name, elm_type)
         }
     }
+
+    pub fn to_elm_encoder(&self) -> String {
+        let elm_type = &self.data.1;
+
+        format!(
+            "(\"{name}\", {encoder} <| record.{name})",
+            name = self.name,
+            encoder = elm_json_encoder(elm_type)
+        )
+    }
 }
 
 impl EnumVariant {
@@ -180,6 +247,52 @@ impl EnumVariant {
 
     pub fn to_elm(&self, indent: usize) -> String {
         format!("{}{}", self.name, self.data.to_elm(indent))
+    }
+
+    pub fn to_elm_encoder(&self) -> String {
+        match &self.data {
+            EnumVariantData::None => format!(
+                "\n\
+                {tab}{tab}{name} ->\n\
+                {tab}{tab}{tab}Json.Encode.object\n\
+                {tab}{tab}{tab}{tab}[ ( \"var\", Json.Encode.string \"{name}\" )\n\
+                {tab}{tab}{tab}{tab}]",
+                tab = INDENT,
+                name = self.name
+            ),
+            EnumVariantData::Single((_, elm_type)) => format!(
+                "\n\
+                {tab}{tab}{name} value ->\n\
+                {tab}{tab}{tab}Json.Encode.object\n\
+                {tab}{tab}{tab}{tab}[ ( \"var\", Json.Encode.string \"{name}\" )\n\
+                {tab}{tab}{tab}{tab}, ( \"vardata\", {encoder} <| value )\n\
+                {tab}{tab}{tab}{tab}]",
+                tab = INDENT,
+                name = self.name,
+                encoder = elm_json_encoder(elm_type)
+            ),
+            EnumVariantData::Struct(fields) => format!(
+                "\n\
+                {tab}{tab}{name} record ->\n\
+                {tab}{tab}{tab}Json.Encode.object\n\
+                {tab}{tab}{tab}{tab}[ ( \"var\", Json.Encode.string \"{name}\" )\n\
+                {tab}{tab}{tab}{tab}, ( \"vardata\", Json.Encode.object\n\
+                {tab}{tab}{tab}{tab}{tab}[{encoder}\n\
+                {tab}{tab}{tab}{tab}{tab}] )\n\
+                {tab}{tab}{tab}{tab}]",
+                tab = INDENT,
+                name = self.name,
+                encoder = fields
+                    .iter()
+                    .map(|field| format!(
+                        " ( \"{name}\", {encoder} <| record.{name} )",
+                        name = field.name,
+                        encoder = elm_json_encoder(&field.data.1)
+                    ))
+                    .collect::<Vec<_>>()
+                    .join(&format!("\n{tab}{tab}{tab}{tab}{tab},", tab = INDENT))
+            ),
+        }
     }
 }
 
