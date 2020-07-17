@@ -174,39 +174,6 @@ encodeTestStruct record =
         compare_strings(expected, create_spec_struct_with_vec().to_elm());
     }
 
-    fn create_spec_enum_empty() -> ApiSpec {
-        ApiSpec {
-            module: "".into(),
-            types: vec![TypeSpec::Enum {
-                name: "TestEnum".into(),
-                variants: vec![],
-            }],
-        }
-    }
-
-    #[test]
-    fn rust_enum_empty() {
-        let expected = "\
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub enum TestEnum {
-}";
-
-        compare_strings(expected, create_spec_enum_empty().to_rust());
-    }
-
-    //     #[test]
-    //     fn elm_enum_empty() {
-    //         // TODO: error on empty enum?
-    //         let expected = "\
-    // import Json.Decode
-    // import Json.Encode
-
-    // type TestEnum
-    //     = ";
-
-    //         compare_strings(expected, create_spec_enum_empty().to_elm());
-    //     }
-
     fn create_spec_enum_simple() -> ApiSpec {
         ApiSpec {
             module: "".into(),
