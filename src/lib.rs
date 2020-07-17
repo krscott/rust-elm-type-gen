@@ -25,6 +25,16 @@ mod tests {
         compare_strings("", spec.to_rust());
     }
 
+    #[test]
+    fn elm_empty() {
+        let spec = ApiSpec {
+            module: "".into(),
+            types: vec![],
+        };
+
+        compare_strings("", spec.to_elm());
+    }
+
     fn create_spec_empty() -> ApiSpec {
         ApiSpec {
             module: "".into(),
@@ -43,6 +53,15 @@ pub struct TestStruct {
 }";
 
         compare_strings(expected, create_spec_empty().to_rust());
+    }
+
+    #[test]
+    fn elm_empty_struct() {
+        let expected = "\
+type alias TestStruct =
+    {}";
+
+        compare_strings(expected, create_spec_empty().to_elm());
     }
 
     fn create_spec_simple_struct() -> ApiSpec {
@@ -76,6 +95,17 @@ pub struct TestStruct {
         compare_strings(expected, create_spec_simple_struct().to_rust());
     }
 
+    #[test]
+    fn elm_simple_struct() {
+        let expected = "\
+type alias TestStruct =
+    { foo: Int
+    , bar: String
+    }";
+
+        compare_strings(expected, create_spec_simple_struct().to_elm());
+    }
+
     fn create_spec_empty_enum() -> ApiSpec {
         ApiSpec {
             module: "".into(),
@@ -94,6 +124,16 @@ pub enum TestEnum {
 }";
 
         compare_strings(expected, create_spec_empty_enum().to_rust());
+    }
+
+    #[test]
+    fn elm_empty_enum() {
+        // TODO: error on empty enum?
+        let expected = "\
+type TestEnum
+    = ";
+
+        compare_strings(expected, create_spec_empty_enum().to_elm());
     }
 
     fn create_spec_simple_enum() -> ApiSpec {
@@ -130,6 +170,17 @@ pub enum TestEnum {
 }";
 
         compare_strings(expected, create_spec_simple_enum().to_rust());
+    }
+
+    #[test]
+    fn elm_simple_enum() {
+        let expected = "\
+type TestEnum
+    = Foo
+    | Bar
+    | Qux";
+
+        compare_strings(expected, create_spec_simple_enum().to_elm());
     }
 
     fn create_spec_complex_enum() -> ApiSpec {
@@ -178,5 +229,16 @@ pub enum TestEnum {
 }";
 
         compare_strings(expected, create_spec_complex_enum().to_rust());
+    }
+
+    #[test]
+    fn elm_complex_enum() {
+        let expected = "\
+type TestEnum
+    = Foo
+    | Bar Bool
+    | Qux { sub1: Int, sub2: String }";
+
+        compare_strings(expected, create_spec_complex_enum().to_elm());
     }
 }

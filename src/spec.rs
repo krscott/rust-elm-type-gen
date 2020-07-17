@@ -49,6 +49,14 @@ impl ApiSpec {
             .collect::<Vec<_>>()
             .join("\n\n")
     }
+
+    pub fn to_elm(&self) -> String {
+        self.types
+            .iter()
+            .map(|t| t.to_elm())
+            .collect::<Vec<_>>()
+            .join("\n\n")
+    }
 }
 
 impl TypeSpec {
@@ -90,11 +98,67 @@ pub enum {name} {{
             }
         }
     }
+
+    pub fn to_elm(&self) -> String {
+        match self {
+            Self::Struct { name, fields } => {
+                if fields.len() == 0 {
+                    return format!(
+                        "\
+type alias {name} =
+{indent}{{}}",
+                        name = name,
+                        indent = INDENT,
+                    );
+                }
+
+                let sep = format!("\n{}, ", INDENT);
+
+                let fields_fmt = fields
+                    .iter()
+                    .map(|field| field.to_elm(1))
+                    .collect::<Vec<_>>()
+                    .join(&sep);
+
+                format!(
+                    "\
+type alias {name} =
+{indent}{{ {fields}
+{indent}}}",
+                    name = name,
+                    fields = fields_fmt,
+                    indent = INDENT,
+                )
+            }
+            Self::Enum { name, variants } => {
+                let sep = format!("\n{}| ", INDENT);
+
+                let variants_fmt = variants
+                    .iter()
+                    .map(|var| var.to_elm(1))
+                    .collect::<Vec<_>>()
+                    .join(&sep);
+
+                format!(
+                    "\
+type {name}
+{indent}= {variants}",
+                    name = name,
+                    variants = variants_fmt,
+                    indent = INDENT,
+                )
+            }
+        }
+    }
 }
 
 impl StructField {
     pub fn to_rust(&self, indent: usize) -> String {
         format!("{}{}: {},\n", INDENT.repeat(indent), self.name, self.data.0)
+    }
+
+    pub fn to_elm(&self, _indent: usize) -> String {
+        format!("{}: {}", self.name, self.data.1)
     }
 }
 
@@ -106,6 +170,10 @@ impl EnumVariant {
             self.name,
             self.data.to_rust(indent)
         )
+    }
+
+    pub fn to_elm(&self, indent: usize) -> String {
+        format!("{}{}", self.name, self.data.to_elm(indent))
     }
 }
 
@@ -126,6 +194,22 @@ impl EnumVariantData {
                     fields = fields_fmt,
                     indent = INDENT.repeat(indent)
                 )
+            }
+        }
+    }
+
+    pub fn to_elm(&self, indent: usize) -> String {
+        match self {
+            Self::None => "".into(),
+            Self::Single((_, elm_type)) => format!(" {}", elm_type),
+            Self::Struct(fields) => {
+                let fields_fmt = fields
+                    .iter()
+                    .map(|field| field.to_elm(indent + 1))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+
+                format!(" {{ {fields} }}", fields = fields_fmt)
             }
         }
     }
