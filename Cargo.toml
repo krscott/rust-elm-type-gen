@@ -4,8 +4,11 @@ version = "0.1.0"
 authors = ["Kris Scott <kscott91@gmail.com>"]
 edition = "2018"
 description = "Boilerplate for Rust CLI program"
+default-run = "main"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "main"
+path = "src/bin/main.rs"
 
 [dependencies]
 polymorphio = { git = "https://github.com/krscott/polymorphio.git", tag = "v0.1.0"}
