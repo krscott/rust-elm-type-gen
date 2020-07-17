@@ -34,8 +34,9 @@ mod tests {
 
         compare_strings(
             "\
-import Json.Decode
 import Json.Encode
+import Json.Decode exposing ((:=))
+import Json.Decode.Extra exposing ((|:))
 
 ",
             spec.to_elm(),
@@ -65,8 +66,9 @@ pub struct TestStruct {
     #[test]
     fn elm_struct_empty() {
         let expected = "\
-import Json.Decode
 import Json.Encode
+import Json.Decode exposing ((:=))
+import Json.Decode.Extra exposing ((|:))
 
 type alias TestStruct =
     { \n    }
@@ -113,8 +115,9 @@ pub struct TestStruct {
     #[test]
     fn elm_struct_simple() {
         let expected = "\
-import Json.Decode
 import Json.Encode
+import Json.Decode exposing ((:=))
+import Json.Decode.Extra exposing ((|:))
 
 type alias TestStruct =
     { foo: Int
@@ -158,8 +161,9 @@ pub struct TestStruct {
     #[test]
     fn elm_struct_with_vec() {
         let expected = "\
-import Json.Decode
 import Json.Encode
+import Json.Decode exposing ((:=))
+import Json.Decode.Extra exposing ((|:))
 
 type alias TestStruct =
     { foo: (List Int)
@@ -201,6 +205,7 @@ encodeTestStruct record =
     fn rust_enum_simple() {
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(tag = \"var\", content = \"vardata\")]
 pub enum TestEnum {
     Foo,
     Bar,
@@ -213,8 +218,9 @@ pub enum TestEnum {
     #[test]
     fn elm_enum_simple() {
         let expected = "\
-import Json.Decode
 import Json.Encode
+import Json.Decode exposing ((:=))
+import Json.Decode.Extra exposing ((|:))
 
 type TestEnum
     = Foo
@@ -276,6 +282,7 @@ encodeTestEnum var =
     fn rust_enum_complex() {
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(tag = \"var\", content = \"vardata\")]
 pub enum TestEnum {
     Foo,
     Bar(bool),
@@ -291,8 +298,9 @@ pub enum TestEnum {
     #[test]
     fn elm_enum_complex() {
         let expected = "\
-import Json.Decode
 import Json.Encode
+import Json.Decode exposing ((:=))
+import Json.Decode.Extra exposing ((|:))
 
 type TestEnum
     = Foo
@@ -349,6 +357,7 @@ encodeTestEnum var =
     fn rust_enum_with_vec() {
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(tag = \"var\", content = \"vardata\")]
 pub enum TestEnum {
     Bar(Vec<u32>),
     Qux {
@@ -362,8 +371,9 @@ pub enum TestEnum {
     #[test]
     fn elm_enum_with_vec() {
         let expected = "\
-import Json.Decode
 import Json.Encode
+import Json.Decode exposing ((:=))
+import Json.Decode.Extra exposing ((|:))
 
 type TestEnum
     = Bar (List Int)

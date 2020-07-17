@@ -40,6 +40,7 @@ pub struct ApiSpec {
 
 const INDENT: &str = "    ";
 const TYPE_DERIVE_HEADER: &str = "#[derive(Debug, serde::Serialize, serde::Deserialize)]";
+const SERDE_ENUM_HEADER: &str = "#[serde(tag = \"var\", content = \"vardata\")]";
 
 impl ApiSpec {
     pub fn to_rust(&self) -> String {
@@ -60,8 +61,9 @@ impl ApiSpec {
 
         format!(
             "\
-import Json.Decode
 import Json.Encode
+import Json.Decode exposing ((:=))
+import Json.Decode.Extra exposing ((|:))
 
 {types}",
             types = types_str
@@ -99,9 +101,11 @@ pub struct {name} {{
                 format!(
                     "\
 {header}
+{enum_header}
 pub enum {name} {{
 {variants}}}",
                     header = TYPE_DERIVE_HEADER,
+                    enum_header = SERDE_ENUM_HEADER,
                     name = name,
                     variants = variants_fmt
                 )
