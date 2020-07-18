@@ -279,9 +279,6 @@ pub enum TestEnum {
         compare_strings(expected, create_spec_enum_complex().to_rust());
     }
 
-    // https://package.elm-lang.org/packages/elm-community/json-extra/latest/Json-Decode-Extra
-    // https://package.elm-lang.org/packages/elm-lang/core/5.1.1/Json-Decode
-    // https://noredink.github.io/json-to-elm/
     #[test]
     fn elm_enum_complex() {
         let expected = "\

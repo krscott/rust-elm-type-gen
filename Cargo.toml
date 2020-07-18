@@ -11,7 +11,7 @@ name = "main"
 path = "src/bin/main.rs"
 
 [dependencies]
-polymorphio = { git = "https://github.com/krscott/polymorphio.git", tag = "v0.1.0"}
+polymorphio = { git = "https://github.com/krscott/polymorphio.git", tag = "v0.1.2"}
 structopt = "0.3"
 log = "0.4"
 stderrlog = "0.4"

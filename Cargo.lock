@@ -139,8 +139,8 @@ checksum = "b8f8bdf33df195859076e54ab11ee78a1b208382d3a26ec40d142ffc1ecc49ef"
 
 [[package]]
 name = "polymorphio"
-version = "0.1.0"
-source = "git+https://github.com/krscott/polymorphio.git?tag=v0.1.0#375210ac3329e1cc35bcf0cdb228e8df9e41e2b9"
+version = "0.1.2"
+source = "git+https://github.com/krscott/polymorphio.git?tag=v0.1.2#4d60e9590cdf4fea525276a40df931cb04e89bf3"
 
 [[package]]
 name = "proc-macro-error"

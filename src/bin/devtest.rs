@@ -1,6 +1,6 @@
 use polymorphio::FileOrStdout;
 use rust_elm_types::*;
-use std::{error::Error, io::Write, path::PathBuf, process::exit};
+use std::{error::Error, path::PathBuf, process::exit};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -22,14 +22,9 @@ struct Opt {
 }
 
 fn app(opt: Opt) -> Result<(), Box<dyn Error>> {
-    let mut output_file = FileOrStdout::from_path(&opt.output)?;
-
-    let mut writer = output_file.lock();
-
     let t = test_data_spec();
 
-    writer.write_all(serde_yaml::to_string(&t).unwrap().as_bytes())?;
-    writer.write_all(b"\n")?;
+    FileOrStdout::write_all(&opt.output, serde_yaml::to_string(&t).unwrap().as_bytes())?;
 
     Ok(())
 }
@@ -55,10 +50,32 @@ fn main() {
 
 fn test_data_spec() -> ApiSpec {
     ApiSpec {
-        module: "test_types".into(),
-        types: vec![TypeSpec::Struct {
-            name: "TestStruct".into(),
-            fields: vec![],
+        module: "test".into(),
+        types: vec![TypeSpec::Enum {
+            name: "TestEnum".into(),
+            variants: vec![
+                EnumVariant {
+                    name: "Foo".into(),
+                    data: EnumVariantData::None,
+                },
+                EnumVariant {
+                    name: "Bar".into(),
+                    data: EnumVariantData::Single(("bool".into(), "Bool".into())),
+                },
+                EnumVariant {
+                    name: "Qux".into(),
+                    data: EnumVariantData::Struct(vec![
+                        StructField {
+                            name: "sub1".into(),
+                            data: ("u32".into(), "Int".into()),
+                        },
+                        StructField {
+                            name: "sub2".into(),
+                            data: ("String".into(), "String".into()),
+                        },
+                    ]),
+                },
+            ],
         }],
     }
 }
