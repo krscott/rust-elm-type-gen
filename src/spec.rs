@@ -55,7 +55,7 @@ impl ApiSpec {
         let types_str = self
             .types
             .iter()
-            .flat_map(|t| vec![t.to_elm(), t.to_elm_encoder()])
+            .flat_map(|t| vec![t.to_elm(), t.to_elm_decoder(), t.to_elm_encoder()])
             .collect::<Vec<_>>()
             .join("\n\n");
 
@@ -155,6 +155,50 @@ type {name}
         }
     }
 
+    pub fn to_elm_decoder(&self) -> String {
+        match self {
+            Self::Struct { name, fields } => {
+                let sep = format!("\n{}", INDENT.repeat(2));
+
+                let field_decoders = fields
+                    .iter()
+                    .map(|field| format!("|: {}", field.to_elm_decoder()))
+                    .collect::<Vec<_>>()
+                    .join(&sep);
+
+                format!(
+                    "\
+decode{name} : Json.Decode.Decoder {name}
+decode{name} =
+    Json.Decode.succeed {name}
+        {fields}",
+                    name = name,
+                    fields = field_decoders
+                )
+            }
+            Self::Enum { name, variants } => {
+                let sep = format!("\n{}, ", INDENT.repeat(2));
+
+                let variant_decoders = variants
+                    .iter()
+                    .map(|var| var.to_elm_decoder())
+                    .collect::<Vec<_>>()
+                    .join(&sep);
+
+                format!(
+                    "\
+decode{name} : Json.Decode.Decoder {name}
+decode{name} =
+    Json.Decode.oneOf
+        [ {variants}
+        ]",
+                    name = name,
+                    variants = variant_decoders
+                )
+            }
+        }
+    }
+
     pub fn to_elm_encoder(&self) -> String {
         match self {
             Self::Struct { name, fields } => {
@@ -197,6 +241,22 @@ encode{name} var =
     }
 }
 
+fn elm_json_decoder(elm_type: &str) -> String {
+    let supported_types = ["String", "Int", "Float", "Bool", "List"];
+
+    elm_type
+        .split(' ')
+        .map(|t| {
+            if supported_types.contains(&t) {
+                format!("Json.Decode.{}", t.to_lowercase())
+            } else {
+                format!("decode{}", t)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn elm_json_encoder(elm_type: &str) -> String {
     let supported_types = ["String", "Int", "Float", "Bool", "List"];
 
@@ -228,6 +288,16 @@ impl StructField {
         }
     }
 
+    pub fn to_elm_decoder(&self) -> String {
+        let elm_type = &self.data.1;
+
+        format!(
+            "(\"{name}\" := {decoder})",
+            name = self.name,
+            decoder = elm_json_decoder(elm_type)
+        )
+    }
+
     pub fn to_elm_encoder(&self) -> String {
         let elm_type = &self.data.1;
 
@@ -251,6 +321,43 @@ impl EnumVariant {
 
     pub fn to_elm(&self, indent: usize) -> String {
         format!("{}{}", self.name, self.data.to_elm(indent))
+    }
+
+    pub fn to_elm_decoder(&self) -> String {
+        match &self.data {
+            EnumVariantData::None => format!(
+                "when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"{name}\")\n\
+                {indent}<| Json.Decode.succeed {name}",
+                name = self.name,
+                indent = INDENT.repeat(3)
+            ),
+            EnumVariantData::Single((_, elm_type)) => format!(
+                "when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"{name}\")\n\
+                {indent}<| Json.Decode.map {name} (Json.Decode.field \"vardata\" <| {decoder})",
+                name = self.name,
+                decoder = elm_json_decoder(elm_type),
+                indent = INDENT.repeat(3)
+            ),
+            EnumVariantData::Struct(fields) => format!(
+                "when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"{name}\")\n\
+                {indent}<| Json.Decode.map {name} (Json.Decode.field \"vardata\"\n\
+                {indent}{tab}<| Json.Decode.succeed {name}\n\
+                {decoder})",
+                name = self.name,
+                indent = INDENT.repeat(3),
+                tab = INDENT,
+                decoder = fields
+                    .iter()
+                    .map(|field| format!(
+                        "{indent}|: (\"{name}\" := {decoder})",
+                        indent = INDENT.repeat(5),
+                        name = field.name,
+                        decoder = elm_json_decoder(&field.data.1)
+                    ))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            ),
+        }
     }
 
     pub fn to_elm_encoder(&self) -> String {

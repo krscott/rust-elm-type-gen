@@ -43,44 +43,6 @@ import Json.Decode.Extra exposing ((|:))
         );
     }
 
-    fn create_struct_empty() -> ApiSpec {
-        ApiSpec {
-            module: "".into(),
-            types: vec![TypeSpec::Struct {
-                name: "TestStruct".into(),
-                fields: vec![],
-            }],
-        }
-    }
-
-    #[test]
-    fn rust_struct_empty() {
-        let expected = "\
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct TestStruct {
-}";
-
-        compare_strings(expected, create_struct_empty().to_rust());
-    }
-
-    #[test]
-    fn elm_struct_empty() {
-        let expected = "\
-import Json.Encode
-import Json.Decode exposing ((:=))
-import Json.Decode.Extra exposing ((|:))
-
-type alias TestStruct =
-    { \n    }
-
-encodeTestStruct : TestStruct -> Json.Encode.Value
-encodeTestStruct record =
-    Json.Encode.object
-        [ \n        ]";
-
-        compare_strings(expected, create_struct_empty().to_elm());
-    }
-
     fn create_spec_struct_simple() -> ApiSpec {
         ApiSpec {
             module: "".into(),
@@ -123,6 +85,12 @@ type alias TestStruct =
     { foo: Int
     , bar: String
     }
+
+decodeTestStruct : Json.Decode.Decoder TestStruct
+decodeTestStruct =
+    Json.Decode.succeed TestStruct
+        |: (\"foo\" := Json.Decode.int)
+        |: (\"bar\" := Json.Decode.string)
 
 encodeTestStruct : TestStruct -> Json.Encode.Value
 encodeTestStruct record =
@@ -168,6 +136,11 @@ import Json.Decode.Extra exposing ((|:))
 type alias TestStruct =
     { foo: (List Int)
     }
+
+decodeTestStruct : Json.Decode.Decoder TestStruct
+decodeTestStruct =
+    Json.Decode.succeed TestStruct
+        |: (\"foo\" := Json.Decode.list Json.Decode.int)
 
 encodeTestStruct : TestStruct -> Json.Encode.Value
 encodeTestStruct record =
@@ -226,6 +199,17 @@ type TestEnum
     = Foo
     | Bar
     | Qux
+
+decodeTestEnum : Json.Decode.Decoder TestEnum
+decodeTestEnum =
+    Json.Decode.oneOf
+        [ when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Foo\")
+            <| Json.Decode.succeed Foo
+        , when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Bar\")
+            <| Json.Decode.succeed Bar
+        , when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Qux\")
+            <| Json.Decode.succeed Qux
+        ]
 
 encodeTestEnum : TestEnum -> Json.Encode.Value
 encodeTestEnum var =
@@ -295,6 +279,9 @@ pub enum TestEnum {
         compare_strings(expected, create_spec_enum_complex().to_rust());
     }
 
+    // https://package.elm-lang.org/packages/elm-community/json-extra/latest/Json-Decode-Extra
+    // https://package.elm-lang.org/packages/elm-lang/core/5.1.1/Json-Decode
+    // https://noredink.github.io/json-to-elm/
     #[test]
     fn elm_enum_complex() {
         let expected = "\
@@ -306,6 +293,20 @@ type TestEnum
     = Foo
     | Bar Bool
     | Qux { sub1: Int, sub2: String }
+
+decodeTestEnum : Json.Decode.Decoder TestEnum
+decodeTestEnum =
+    Json.Decode.oneOf
+        [ when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Foo\")
+            <| Json.Decode.succeed Foo
+        , when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Bar\")
+            <| Json.Decode.map Bar (Json.Decode.field \"vardata\" <| Json.Decode.bool)
+        , when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Qux\")
+            <| Json.Decode.map Qux (Json.Decode.field \"vardata\"
+                <| Json.Decode.succeed Qux
+                    |: (\"sub1\" := Json.Decode.int)
+                    |: (\"sub2\" := Json.Decode.string))
+        ]
 
 encodeTestEnum : TestEnum -> Json.Encode.Value
 encodeTestEnum var =
@@ -378,6 +379,17 @@ import Json.Decode.Extra exposing ((|:))
 type TestEnum
     = Bar (List Int)
     | Qux { sub1: (List Bool) }
+
+decodeTestEnum : Json.Decode.Decoder TestEnum
+decodeTestEnum =
+    Json.Decode.oneOf
+        [ when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Bar\")
+            <| Json.Decode.map Bar (Json.Decode.field \"vardata\" <| Json.Decode.list Json.Decode.int)
+        , when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Qux\")
+            <| Json.Decode.map Qux (Json.Decode.field \"vardata\"
+                <| Json.Decode.succeed Qux
+                    |: (\"sub1\" := Json.Decode.list Json.Decode.bool))
+        ]
 
 encodeTestEnum : TestEnum -> Json.Encode.Value
 encodeTestEnum var =
