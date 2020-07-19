@@ -70,8 +70,8 @@ import Json.Encode
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct TestStruct {
-    foo: u32,
-    bar: String,
+    pub foo: u32,
+    pub bar: String,
 }";
 
         compare_strings(expected, create_spec_struct_simple().to_rust());
@@ -126,7 +126,7 @@ encodeTestStruct record =
         let expected = "\
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct TestStruct {
-    foo: Vec<u32>,
+    pub foo: Vec<u32>,
 }";
 
         compare_strings(expected, create_spec_struct_with_vec().to_rust());

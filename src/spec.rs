@@ -99,7 +99,7 @@ impl TypeSpec {
             Self::Struct { name, fields } => {
                 let fields_fmt = fields
                     .iter()
-                    .map(|field| field.to_rust(1))
+                    .map(|field| field.to_rust(1, true))
                     .collect::<Vec<_>>()
                     .join("");
 
@@ -322,8 +322,14 @@ fn elm_json_encoder(elm_type: &str) -> String {
 }
 
 impl StructField {
-    pub fn to_rust(&self, indent: usize) -> String {
-        format!("{}{}: {},\n", INDENT.repeat(indent), self.name, self.data.0)
+    pub fn to_rust(&self, indent: usize, add_pub: bool) -> String {
+        format!(
+            "{}{}{}: {},\n",
+            INDENT.repeat(indent),
+            if add_pub { "pub " } else { "" },
+            self.name,
+            self.data.0
+        )
     }
 
     pub fn to_elm(&self, _indent: usize) -> String {
@@ -475,7 +481,7 @@ impl EnumVariantData {
             Self::Struct(fields) => {
                 let fields_fmt = fields
                     .iter()
-                    .map(|field| field.to_rust(indent + 1))
+                    .map(|field| field.to_rust(indent + 1, false))
                     .collect::<Vec<_>>()
                     .join("");
 
