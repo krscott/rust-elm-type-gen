@@ -157,7 +157,7 @@ decodeTestStruct =
 encodeTestStruct : TestStruct -> Json.Encode.Value
 encodeTestStruct record =
     Json.Encode.object
-        [ (\"foo\", Json.Encode.list <| List.map Json.Encode.int <| record.foo)
+        [ (\"foo\", Json.Encode.list Json.Encode.int <| record.foo)
         ]";
 
         compare_strings(expected, create_spec_struct_with_vec().to_elm());
@@ -486,13 +486,13 @@ encodeTestEnum var =
         Bar value ->
             Json.Encode.object
                 [ ( \"var\", Json.Encode.string \"Bar\" )
-                , ( \"vardata\", Json.Encode.list <| List.map Json.Encode.int <| value )
+                , ( \"vardata\", Json.Encode.list Json.Encode.int <| value )
                 ]
         Qux record ->
             Json.Encode.object
                 [ ( \"var\", Json.Encode.string \"Qux\" )
                 , ( \"vardata\", Json.Encode.object
-                    [ ( \"sub1\", Json.Encode.list <| List.map Json.Encode.bool <| record.sub1 )
+                    [ ( \"sub1\", Json.Encode.list Json.Encode.bool <| record.sub1 )
                     ] )
                 ]";
 

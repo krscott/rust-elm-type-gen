@@ -311,7 +311,7 @@ fn elm_json_decoder(elm_type: &str) -> String {
 fn elm_json_encoder(elm_type: &str) -> String {
     let supported_types = ["String", "Int", "Float", "Bool", "List"];
 
-    let elm_types_split = elm_type
+    elm_type
         .split(' ')
         .map(|t| {
             if supported_types.contains(&t) {
@@ -322,13 +322,8 @@ fn elm_json_encoder(elm_type: &str) -> String {
                 format!("encode{}", t)
             }
         })
-        .collect::<Vec<_>>();
-
-    if elm_type.starts_with("Maybe ") {
-        elm_types_split.join(" ")
-    } else {
-        elm_types_split.join(" <| List.map ")
-    }
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 impl StructField {
