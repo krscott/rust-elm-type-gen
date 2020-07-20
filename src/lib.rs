@@ -40,6 +40,7 @@ import Json.Decode
 import Json.Decode.Extra
 import Json.Decode.Pipeline
 import Json.Encode
+import Json.Encode.Extra
 
 ",
             spec.to_elm(),
@@ -86,6 +87,7 @@ import Json.Decode
 import Json.Decode.Extra
 import Json.Decode.Pipeline
 import Json.Encode
+import Json.Encode.Extra
 
 type alias TestStruct =
     { foo : Int
@@ -141,6 +143,7 @@ import Json.Decode
 import Json.Decode.Extra
 import Json.Decode.Pipeline
 import Json.Encode
+import Json.Encode.Extra
 
 type alias TestStruct =
     { foo : (List Int)
@@ -158,6 +161,59 @@ encodeTestStruct record =
         ]";
 
         compare_strings(expected, create_spec_struct_with_vec().to_elm());
+    }
+
+    fn create_spec_struct_with_option() -> ApiSpec {
+        ApiSpec {
+            module: "TestType".into(),
+            types: vec![TypeSpec::Struct {
+                name: "TestStruct".into(),
+                fields: vec![StructField {
+                    name: "foo".into(),
+                    data: ("Option<u32>".into(), "Maybe Int".into()),
+                }],
+            }],
+        }
+    }
+
+    #[test]
+    fn rust_struct_with_option() {
+        let expected = "\
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct TestStruct {
+    pub foo: Option<u32>,
+}";
+
+        compare_strings(expected, create_spec_struct_with_option().to_rust());
+    }
+
+    #[test]
+    fn elm_struct_with_option() {
+        let expected = "\
+module TestType exposing (TestStruct, decodeTestStruct, encodeTestStruct)
+
+import Json.Decode
+import Json.Decode.Extra
+import Json.Decode.Pipeline
+import Json.Encode
+import Json.Encode.Extra
+
+type alias TestStruct =
+    { foo : (Maybe Int)
+    }
+
+decodeTestStruct : Json.Decode.Decoder TestStruct
+decodeTestStruct =
+    Json.Decode.succeed TestStruct
+        |> Json.Decode.Pipeline.required \"foo\" (Json.Decode.nullable Json.Decode.int)
+
+encodeTestStruct : TestStruct -> Json.Encode.Value
+encodeTestStruct record =
+    Json.Encode.object
+        [ (\"foo\", Json.Encode.Extra.maybe Json.Encode.int <| record.foo)
+        ]";
+
+        compare_strings(expected, create_spec_struct_with_option().to_elm());
     }
 
     fn create_spec_enum_simple() -> ApiSpec {
@@ -206,6 +262,7 @@ import Json.Decode
 import Json.Decode.Extra
 import Json.Decode.Pipeline
 import Json.Encode
+import Json.Encode.Extra
 
 type TestEnum
     = Foo
@@ -300,6 +357,7 @@ import Json.Decode
 import Json.Decode.Extra
 import Json.Decode.Pipeline
 import Json.Encode
+import Json.Encode.Extra
 
 type alias TestEnumQux =
     { sub1 : Int
@@ -398,6 +456,7 @@ import Json.Decode
 import Json.Decode.Extra
 import Json.Decode.Pipeline
 import Json.Encode
+import Json.Encode.Extra
 
 type alias TestEnumQux =
     { sub1 : (List Bool)
@@ -438,5 +497,94 @@ encodeTestEnum var =
                 ]";
 
         compare_strings(expected, create_spec_enum_with_vec().to_elm());
+    }
+
+    fn create_spec_enum_with_option() -> ApiSpec {
+        ApiSpec {
+            module: "TestType".into(),
+            types: vec![TypeSpec::Enum {
+                name: "TestEnum".into(),
+                variants: vec![
+                    EnumVariant {
+                        name: "Bar".into(),
+                        data: EnumVariantData::Single(("Option<u32>".into(), "Maybe Int".into())),
+                    },
+                    EnumVariant {
+                        name: "Qux".into(),
+                        data: EnumVariantData::Struct(vec![StructField {
+                            name: "sub1".into(),
+                            data: ("Option<bool>".into(), "Maybe Bool".into()),
+                        }]),
+                    },
+                ],
+            }],
+        }
+    }
+
+    #[test]
+    fn rust_enum_with_option() {
+        let expected = "\
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(tag = \"var\", content = \"vardata\")]
+pub enum TestEnum {
+    Bar(Option<u32>),
+    Qux {
+        sub1: Option<bool>,
+    },
+}";
+
+        compare_strings(expected, create_spec_enum_with_option().to_rust());
+    }
+
+    #[test]
+    fn elm_enum_with_option() {
+        let expected = "\
+module TestType exposing (TestEnum(..), decodeTestEnum, encodeTestEnum)
+
+import Json.Decode
+import Json.Decode.Extra
+import Json.Decode.Pipeline
+import Json.Encode
+import Json.Encode.Extra
+
+type alias TestEnumQux =
+    { sub1 : (Maybe Bool)
+    }
+
+decodeTestEnumQux : Json.Decode.Decoder TestEnumQux
+decodeTestEnumQux =
+    Json.Decode.succeed TestEnumQux
+        |> Json.Decode.Pipeline.required \"sub1\" (Json.Decode.nullable Json.Decode.bool)
+
+type TestEnum
+    = Bar (Maybe Int)
+    | Qux TestEnumQux
+
+decodeTestEnum : Json.Decode.Decoder TestEnum
+decodeTestEnum =
+    Json.Decode.oneOf
+        [ Json.Decode.Extra.when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Bar\") <|
+            Json.Decode.map Bar (Json.Decode.field \"vardata\" <| (Json.Decode.nullable Json.Decode.int))
+        , Json.Decode.Extra.when (Json.Decode.field \"var\" Json.Decode.string) ((==) \"Qux\") <|
+            Json.Decode.map Qux (Json.Decode.field \"vardata\" <| decodeTestEnumQux)
+        ]
+
+encodeTestEnum : TestEnum -> Json.Encode.Value
+encodeTestEnum var =
+    case var of
+        Bar value ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Bar\" )
+                , ( \"vardata\", Json.Encode.Extra.maybe Json.Encode.int <| value )
+                ]
+        Qux record ->
+            Json.Encode.object
+                [ ( \"var\", Json.Encode.string \"Qux\" )
+                , ( \"vardata\", Json.Encode.object
+                    [ ( \"sub1\", Json.Encode.Extra.maybe Json.Encode.bool <| record.sub1 )
+                    ] )
+                ]";
+
+        compare_strings(expected, create_spec_enum_with_option().to_elm());
     }
 }

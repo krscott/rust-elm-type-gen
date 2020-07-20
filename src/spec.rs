@@ -84,6 +84,7 @@ import Json.Decode
 import Json.Decode.Extra
 import Json.Decode.Pipeline
 import Json.Encode
+import Json.Encode.Extra
 
 {types}",
             name = self.module,
@@ -292,6 +293,8 @@ fn elm_json_decoder(elm_type: &str) -> String {
         .map(|t| {
             if supported_types.contains(&t) {
                 format!("Json.Decode.{}", t.to_lowercase())
+            } else if t == "Maybe" {
+                String::from("Json.Decode.nullable")
             } else {
                 format!("decode{}", t)
             }
@@ -308,17 +311,24 @@ fn elm_json_decoder(elm_type: &str) -> String {
 fn elm_json_encoder(elm_type: &str) -> String {
     let supported_types = ["String", "Int", "Float", "Bool", "List"];
 
-    elm_type
+    let elm_types_split = elm_type
         .split(' ')
         .map(|t| {
             if supported_types.contains(&t) {
                 format!("Json.Encode.{}", t.to_lowercase())
+            } else if t == "Maybe" {
+                String::from("Json.Encode.Extra.maybe")
             } else {
                 format!("encode{}", t)
             }
         })
-        .collect::<Vec<_>>()
-        .join(" <| List.map ")
+        .collect::<Vec<_>>();
+
+    if elm_type.starts_with("Maybe ") {
+        elm_types_split.join(" ")
+    } else {
+        elm_types_split.join(" <| List.map ")
+    }
 }
 
 impl StructField {
