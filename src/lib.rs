@@ -69,7 +69,7 @@ import Json.Encode.Extra
     #[test]
     fn rust_struct_simple() {
         let expected = "\
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TestStruct {
     pub foo: u32,
     pub bar: String,
@@ -126,7 +126,7 @@ encodeTestStruct record =
     #[test]
     fn rust_struct_with_vec() {
         let expected = "\
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TestStruct {
     pub foo: Vec<u32>,
 }";
@@ -179,7 +179,7 @@ encodeTestStruct record =
     #[test]
     fn rust_struct_with_option() {
         let expected = "\
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TestStruct {
     pub foo: Option<u32>,
 }";
@@ -242,7 +242,7 @@ encodeTestStruct record =
     #[test]
     fn rust_enum_simple() {
         let expected = "\
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = \"var\", content = \"vardata\")]
 pub enum TestEnum {
     Foo,
@@ -334,7 +334,7 @@ encodeTestEnum var =
     #[test]
     fn rust_enum_complex() {
         let expected = "\
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = \"var\", content = \"vardata\")]
 pub enum TestEnum {
     Foo,
@@ -435,7 +435,7 @@ encodeTestEnum var =
     #[test]
     fn rust_enum_with_vec() {
         let expected = "\
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = \"var\", content = \"vardata\")]
 pub enum TestEnum {
     Bar(Vec<u32>),
@@ -524,7 +524,7 @@ encodeTestEnum var =
     #[test]
     fn rust_enum_with_option() {
         let expected = "\
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = \"var\", content = \"vardata\")]
 pub enum TestEnum {
     Bar(Option<u32>),

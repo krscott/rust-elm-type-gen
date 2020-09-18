@@ -39,7 +39,7 @@ pub struct ApiSpec {
 }
 
 const INDENT: &str = "    ";
-const TYPE_DERIVE_HEADER: &str = "#[derive(Debug, serde::Serialize, serde::Deserialize)]";
+const TYPE_DERIVE_HEADER: &str = "#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]";
 const SERDE_ENUM_HEADER: &str = "#[serde(tag = \"var\", content = \"vardata\")]";
 
 impl ApiSpec {
